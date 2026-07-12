@@ -1,0 +1,329 @@
+/* =========================================================
+   Wisnu CMS — tampilan dial (port dari wisnu-web).
+   Tema dikontrol lewat atribut [data-theme] pada .app,
+   bukan lagi checkbox-hack — lebih cocok untuk React.
+   ========================================================= */
+
+/* Font Inter & Material Symbols dimuat via <link> di app/layout.tsx */
+
+@property --bob {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+:root {
+  --accent: #0ea5e9;
+  --accent-deep: #082f49;
+  --accent-mid: #0284c7;
+  --radius: 12rem;
+  --avatar: 4.5rem;
+  --center: 8.5rem;
+  --bg: #ffffff;
+  --text: #0f172a;
+  --text-soft: #475569;
+  --panel-bg: #ffffff;
+  --panel-border: #e2e8f0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: "Inter", system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+.material-symbols-outlined { line-height: 1; user-select: none; }
+
+/* ---------------- APP WRAPPER ---------------- */
+.app {
+  min-height: 100vh;
+  display: grid;
+  place-content: center;
+  overflow: hidden;
+  position: relative;
+  transition: background .6s ease, color .6s ease;
+}
+
+/* ---------------- STAGE ---------------- */
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  perspective: 1200px;
+}
+
+/* ---------------- DIAL ---------------- */
+.dial {
+  position: relative;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  width: calc(var(--radius) * 2 + var(--avatar));
+  height: calc(var(--radius) * 2 + var(--avatar));
+  border-radius: 50%;
+  transform-style: preserve-3d;
+  transition: transform .5s cubic-bezier(.2,.8,.2,1);
+}
+.dial > .avatar,
+.dial > .center { grid-area: 1 / 1; }
+
+/* ---- Foto tengah (tombol -> Tentang) ---- */
+.center {
+  appearance: none;
+  padding: 0;
+  cursor: pointer;
+  position: relative;
+  width: var(--center);
+  height: var(--center);
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+  border: 1px solid rgba(255,255,255,.4);
+  box-shadow: 0 10px 40px -12px rgba(0,0,0,.5);
+  transition: box-shadow .3s ease, transform .3s ease;
+  animation: photoIn 1.1s cubic-bezier(.2,.8,.2,1) .15s backwards;
+}
+.center:hover { transform: scale(1.03); }
+.center:focus-visible { outline: none; box-shadow: 0 0 0 5px rgba(14,165,233,.5); }
+.center.selected { box-shadow: 0 0 0 5px rgba(14,165,233,.6); }
+.center img {
+  width: var(--center); height: var(--center);
+  border-radius: 50%; object-fit: cover;
+  position: relative; z-index: 1;
+}
+.center::before {
+  content: "";
+  position: absolute;
+  inset: -0.4rem;
+  background: var(--accent-deep);
+  border-radius: 50%;
+  z-index: -1;
+  transition: inset 1s ease;
+}
+
+/* ---- Ikon di sekeliling ---- */
+.avatar {
+  --d: calc(var(--i) / var(--total));
+  --r-offset: -0.25turn;
+  --r: calc((1turn * var(--d)) + var(--r-offset));
+  transform: rotate(var(--r)) translate(var(--radius)) rotate(calc(-1 * var(--r))) translateY(var(--bob));
+  animation:
+    spread .9s cubic-bezier(.2,.8,.2,1) calc(.9s + var(--i) * .07s) backwards,
+    bob calc(4s + var(--i) * .25s) ease-in-out calc(2.1s + var(--i) * .2s) infinite;
+
+  appearance: none;
+  font: inherit;
+  padding: 0;
+  border: none;
+  width: var(--avatar);
+  height: var(--avatar);
+  border-radius: 50%;
+  display: grid;
+  place-content: center;
+  position: relative;
+  cursor: pointer;
+  color: var(--accent);
+  background: rgba(14,165,233,.08);
+  box-shadow: 0 0 0 4px rgba(14,165,233,.12);
+  transition: background .4s ease, box-shadow .4s ease, color .4s ease;
+  overflow: hidden;
+}
+.avatar img {
+  width: 100%; height: 100%;
+  border-radius: 50%; object-fit: cover;
+}
+.avatar .icon { font-size: 1.8rem; transition: transform .4s ease; }
+.avatar:hover, .avatar:focus-visible {
+  background: rgba(14,165,233,.18);
+  box-shadow: 0 0 0 6px rgba(14,165,233,.18);
+  outline: none;
+}
+.avatar.selected {
+  color: #fff;
+  background: var(--accent-mid);
+  box-shadow: 0 0 0 6px rgba(14,165,233,.35);
+  animation-play-state: paused;
+}
+.avatar.selected .icon { transform: scale(1.15); }
+
+/* ---- Tooltip di bawah ikon ---- */
+.tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-4px);
+  white-space: nowrap;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--accent-mid);
+  background: #fff;
+  padding: .2rem .55rem;
+  border-radius: .45rem;
+  box-shadow: 0 4px 14px -4px rgba(0,0,0,.25);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 5;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.avatar:hover .tip, .avatar:focus-visible .tip,
+.center:hover .tip, .center:focus-visible .tip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+/* tooltip center ada di dalam lingkaran overflow, jadi taruh sedikit lebih dekat */
+.center .tip { top: calc(100% + 4px); }
+
+/* ---------------- ANIMASI ---------------- */
+@keyframes photoIn {
+  from { opacity: 0; transform: scale(.3) rotate(-200deg); }
+  to   { opacity: 1; transform: scale(1)  rotate(0deg); }
+}
+@keyframes spread {
+  from { opacity: 0;
+    transform: rotate(calc(var(--r) - .45turn)) translate(0)
+               rotate(calc(-1 * var(--r) + .45turn)) translateY(0) scale(.2); }
+  to { opacity: 1;
+    transform: rotate(var(--r)) translate(var(--radius))
+               rotate(calc(-1 * var(--r))) translateY(var(--bob)) scale(1); }
+}
+@keyframes bob { 0%,100% { --bob: 0px; } 50% { --bob: -9px; } }
+
+/* ---------------- IDENTITY ---------------- */
+.identity { text-align: center; transition: color .6s ease; }
+.identity h1 { font-size: 1.7rem; font-weight: 700; letter-spacing: .3px; }
+.identity .role { font-size: .9rem; color: var(--accent-mid); font-weight: 500; margin-top: .4rem; }
+.identity .hint { font-size: .8rem; color: var(--text-soft); margin-top: .5rem; }
+
+/* ---------------- LANGUAGE CROSSFADE ---------------- */
+.i18n-fade { transition: opacity .28s ease, filter .28s ease; }
+.app.lang-switching .i18n-fade { opacity: 0; filter: blur(6px); }
+
+/* ---------------- LANGUAGE SWITCH ---------------- */
+.lang-switch {
+  position: fixed; top: 1.25rem; right: 1.25rem; z-index: 30;
+  display: flex; gap: .25rem;
+  background: #e2e8f0; padding: .25rem; border-radius: 999px;
+  transition: background .4s ease;
+}
+.lang-switch button {
+  border: none; background: transparent; color: #64748b;
+  font: 600 .75rem "Inter", sans-serif;
+  padding: .35rem .7rem; border-radius: 999px; cursor: pointer;
+  transition: all .3s ease;
+}
+.lang-switch button.active { background: #fff; color: var(--accent-mid); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+
+/* ---------------- THEME SWITCH ---------------- */
+.theme-switch { position: fixed; top: 1.25rem; left: 1.25rem; z-index: 30; }
+.switch {
+  --h: 2rem;
+  width: calc(var(--h) * 2); height: var(--h);
+  border-radius: 999px; background: #e2e8f0;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 .35rem; cursor: pointer; position: relative; isolation: isolate;
+  transition: background .4s ease; border: none;
+}
+.switch span { font-size: 1.1rem; color: #64748b; z-index: 1; transition: color .4s ease; }
+.switch::after {
+  content: "";
+  position: absolute; top: 3px; left: 3px;
+  width: calc(var(--h) - 6px); height: calc(var(--h) - 6px);
+  border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  transition: transform .4s ease, background .4s ease;
+}
+
+/* ---------------- POPUP / DIALOG ---------------- */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 40;
+  display: grid; place-items: center; padding: 1.5rem;
+  background: rgba(15, 23, 42, .55); backdrop-filter: blur(4px);
+  opacity: 0; visibility: hidden;
+  transition: opacity .3s ease, visibility .3s ease;
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal {
+  position: relative;
+  width: min(560px, 100%); max-height: 85vh; overflow-y: auto;
+  background: var(--panel-bg); border: 1px solid var(--panel-border);
+  border-radius: 1.25rem; box-shadow: 0 30px 80px -20px rgba(0,0,0,.5);
+  padding: 2.5rem 2rem 2rem;
+  transform: translateY(16px) scale(.97);
+  transition: transform .35s cubic-bezier(.34,1.4,.5,1);
+}
+.modal-overlay.open .modal { transform: translateY(0) scale(1); }
+.panel-close {
+  position: absolute; top: 1rem; right: 1rem;
+  width: 2.5rem; height: 2.5rem; border: none; border-radius: 50%;
+  background: #f1f5f9; color: #334155; cursor: pointer;
+  display: grid; place-content: center; transition: background .2s ease; z-index: 1;
+}
+.panel-close:hover { background: #e2e8f0; }
+
+.panel-content h2 {
+  display: flex; align-items: center; gap: .6rem;
+  font-size: 1.35rem; font-weight: 600; margin-bottom: 1.25rem; color: var(--accent-mid);
+}
+.panel-content h2 .material-symbols-outlined { font-size: 1.6rem; }
+.panel-content p { color: var(--text-soft); line-height: 1.7; }
+.panel-content p + p { margin-top: .8rem; }
+
+/* elemen konten (dipakai layout html & lainnya) */
+.timeline, .cards, .contact { list-style: none; display: flex; flex-direction: column; gap: 1.1rem; }
+.timeline li, .cards li { border-left: 2px solid var(--accent); padding-left: 1rem; display: flex; flex-direction: column; gap: .2rem; }
+.timeline .year { font-size: .75rem; color: var(--accent-mid); font-weight: 600; }
+.timeline strong, .cards strong { font-size: 1rem; }
+.timeline em, .cards em { font-style: normal; color: var(--text-soft); font-size: .9rem; }
+.cards a { color: var(--accent-mid); font-size: .85rem; text-decoration: none; margin-top: .2rem; }
+.cards a:hover { text-decoration: underline; }
+.tags { display: flex; flex-wrap: wrap; gap: .5rem; }
+.tags span { background: rgba(14,165,233,.1); color: var(--accent-mid); padding: .4rem .8rem; border-radius: 999px; font-size: .85rem; }
+.contact li { flex-direction: row; align-items: center; gap: .6rem; border: none; padding: 0; }
+.contact .material-symbols-outlined { color: var(--accent-mid); font-size: 1.2rem; }
+.contact a { color: var(--text); text-decoration: none; }
+.contact a:hover { color: var(--accent-mid); }
+
+/* layout: photo */
+.layout-photo img { width: 100%; border-radius: .75rem; margin-bottom: 1rem; }
+/* layout: menu */
+.menu-group + .menu-group { margin-top: 1.5rem; }
+.menu-group > h3 { font-size: 1rem; color: var(--accent-mid); margin-bottom: .6rem; border-bottom: 1px solid var(--panel-border); padding-bottom: .3rem; }
+.menu-item { display: flex; gap: .8rem; padding: .5rem 0; }
+.menu-item img { width: 3.5rem; height: 3.5rem; border-radius: .5rem; object-fit: cover; }
+.menu-item .info { flex: 1; }
+.menu-item .row { display: flex; justify-content: space-between; gap: 1rem; font-weight: 600; }
+.menu-item .price { color: var(--accent-mid); white-space: nowrap; }
+.menu-item .desc { font-size: .85rem; color: var(--text-soft); }
+
+/* ---------------- CREDIT ---------------- */
+.credit { position: fixed; bottom: 1rem; right: 1.25rem; font-size: .75rem; color: var(--text-soft); z-index: 20; }
+.credit a { color: #f97316; text-decoration: none; }
+
+/* =========================================================
+   MODE GELAP
+   ========================================================= */
+.app[data-theme="dark"] .center::before { inset: -3000%; }
+.app[data-theme="dark"] .identity { color: #fff; }
+.app[data-theme="dark"] .identity .hint { color: rgba(255,255,255,.7); }
+.app[data-theme="dark"] .avatar { color: #fff; }
+.app[data-theme="dark"] .credit { color: rgba(255,255,255,.7); }
+.app[data-theme="dark"] .theme-switch .switch { background: #334155; }
+.app[data-theme="dark"] .theme-switch .switch::after { transform: translateX(var(--h)); background: #0f766e; }
+.app[data-theme="dark"] .theme-switch .switch span:first-child { color: #fff; }
+.app[data-theme="dark"] .lang-switch { background: rgba(255,255,255,.15); }
+.app[data-theme="dark"] .lang-switch button { color: rgba(255,255,255,.75); }
+.app[data-theme="dark"] .lang-switch button.active { background: #fff; color: var(--accent-mid); }
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 520px) {
+  :root { --radius: 8.5rem; --avatar: 3.6rem; --center: 6.5rem; }
+  .avatar .icon { font-size: 1.4rem; }
+  .identity h1 { font-size: 1.3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .center, .avatar { animation: none !important; }
+  .dial { transition: none !important; transform: none !important; }
+  .avatar { transform: rotate(var(--r)) translate(var(--radius)) rotate(calc(-1 * var(--r))); }
+}
