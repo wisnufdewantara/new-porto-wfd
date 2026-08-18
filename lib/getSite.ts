@@ -10,7 +10,8 @@ export async function getSite(slug: string): Promise<SiteData | null> {
   try {
     const { data: site, error: siteErr } = await supabase
       .from("sites")
-      .select("*")
+      // hanya kolom publik — JANGAN ambil password_hash
+      .select("id, name, center_image, role, hint, about, theme, default_lang, accent")
       .eq("slug", slug)
       .single();
 

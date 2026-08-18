@@ -1,0 +1,64 @@
+/* Panel admin — gaya sederhana & bersih (terpisah dari tampilan dial) */
+.admin { min-height: 100vh; background: #f8fafc; color: #0f172a; }
+
+/* Login */
+.admin-login { min-height: 100vh; display: grid; place-content: center; padding: 1.5rem; }
+.admin-login .card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem;
+  padding: 2rem; width: min(360px, 92vw); box-shadow: 0 20px 50px -30px rgba(0,0,0,.3);
+  display: flex; flex-direction: column; gap: .8rem;
+}
+.admin-login h1 { font-size: 1.4rem; }
+.admin-login .sub { color: #64748b; font-size: .85rem; margin-top: -.4rem; }
+.admin-login input {
+  padding: .7rem .9rem; border: 1px solid #cbd5e1; border-radius: .6rem; font-size: 1rem;
+}
+.admin-login .err { color: #dc2626; font-size: .85rem; }
+
+/* Editor */
+.admin-wrap { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+.admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.admin-header h1 { font-size: 1.5rem; }
+.admin-header .link { font-size: .85rem; color: #0284c7; text-decoration: none; }
+
+.panel {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem;
+  padding: 1.5rem; margin-bottom: 1.5rem;
+}
+.panel h2 { font-size: 1.05rem; margin-bottom: 1rem; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.panel-head h2 { margin: 0; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+.grid label, .item-edit label { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; color: #475569; }
+.grid input, .grid select, .item-edit input, .item-edit select {
+  padding: .55rem .7rem; border: 1px solid #cbd5e1; border-radius: .5rem; font-size: .9rem; color: #0f172a;
+}
+.grid input[type="color"] { padding: .2rem; height: 2.4rem; }
+.grid .actions { grid-column: 1 / -1; }
+
+.btn {
+  background: #0284c7; color: #fff; border: none; border-radius: .5rem;
+  padding: .55rem 1rem; font-size: .9rem; font-weight: 600; cursor: pointer;
+}
+.btn:hover { background: #0369a1; }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.ghost { background: #e2e8f0; color: #334155; }
+.btn.danger { background: #ef4444; }
+.btn.tiny { padding: .3rem .55rem; font-size: .8rem; }
+
+.items { display: flex; flex-direction: column; gap: .75rem; }
+.item-row { display: flex; gap: .75rem; align-items: flex-start; border: 1px solid #e2e8f0; border-radius: .75rem; padding: .75rem; }
+.order { display: flex; flex-direction: column; align-items: center; gap: .2rem; font-size: .8rem; color: #64748b; }
+.item-edit { flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: .6rem; }
+.item-edit .item-actions { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; }
+.badge { background: #f1f5f9; color: #475569; padding: .2rem .6rem; border-radius: 999px; font-size: .75rem; }
+.del { align-self: center; }
+
+.hint-text { color: #94a3b8; font-size: .8rem; margin-top: 1rem; }
+.notice { background: #fef9c3; border: 1px solid #fde047; padding: 1rem; border-radius: .75rem; }
+.notice code { background: #fff; padding: .1rem .3rem; border-radius: .3rem; }
+
+@media (max-width: 640px) {
+  .grid, .item-edit { grid-template-columns: 1fr; }
+}
