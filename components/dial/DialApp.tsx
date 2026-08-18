@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { SiteData, Lang, LayoutContent } from "@/lib/schema";
 import { LayoutRenderer } from "./LayoutRenderer";
+import AiChat from "./AiChat";
 
 // Komponen interaktif utama — memegang state bahasa, tema, item terpilih,
 // dan efek parallax. Data datang dari props (Fase 1: dari Supabase).
@@ -158,6 +159,9 @@ export default function DialApp({ site }: { site: SiteData }) {
       </div>
 
       <p className="credit">Wisnu CMS</p>
+
+      {/* Widget chat AI (mockup) */}
+      <AiChat />
     </div>
   );
 }
