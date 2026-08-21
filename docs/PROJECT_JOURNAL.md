@@ -105,9 +105,11 @@ Belum dites: login lewat browser pakai password asli (cuma Wisnu yang tahu passw
 jalur bcrypt-nya sendiri sudah terbukti lewat kasus password salah).
 
 ## Sisa kecil yang belum ditutup
-- `<title>` halaman masih hardcoded di `app/layout.tsx` ("Wisnu Fajar Dewantara —
-  Portofolio"), belum ikut DB — jadi tab browser beda dengan nama di halaman. Perbaikannya:
-  `generateMetadata()` yang baca `getSite()`.
+- ~~`<title>` hardcoded~~ ✅ selesai 22 Agustus 2026: `app/page.tsx` pakai
+  `generateMetadata()` yang baca `getSite()`, jadi judul tab ikut nama di DB. `getSite`
+  dibungkus `cache()` dari React supaya metadata + body halaman tetap 1 query (dites: 2
+  request = 2 query, bukan 4). `/admin` punya judul sendiri. Catatan: judul dirender di
+  server, jadi tidak berubah saat toggle bahasa di klien — itu wajar, bukan bug.
 - Dari checklist keamanan PLAN §9 yang masih kosong: rate-limit login, validasi Zod di
   server action, validasi upload gambar, DOMPurify untuk layout `html`.
 
