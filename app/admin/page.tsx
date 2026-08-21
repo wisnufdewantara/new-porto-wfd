@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getSession, authConfigured } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { MAX_ITEMS } from "@/lib/schema";
 import { logout, updateSite, addItem, updateItem, deleteItem, moveItem } from "./actions";
@@ -9,12 +9,13 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   if (!(await getSession())) redirect("/admin/login");
 
-  if (!supabaseAdmin) {
+  if (!supabaseAdmin || !authConfigured()) {
     return (
       <div className="admin-wrap">
         <p className="notice">
-          <b>SUPABASE_SECRET_KEY</b> belum diisi di <code>.env.local</code>. Isi dulu lalu
-          restart <code>npm run dev</code>.
+          <b>SUPABASE_SECRET_KEY</b> dan/atau <b>SESSION_SECRET</b> belum diisi
+          (<code>.env.local</code> lokal, Environment Variables di Vercel). Isi dulu lalu
+          restart <code>npm run dev</code> / redeploy.
         </p>
       </div>
     );

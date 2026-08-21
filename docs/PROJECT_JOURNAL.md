@@ -31,15 +31,20 @@ preview live ditunda ke Fase 4 · TypeScript ya · Vercel subdomain dulu.
 | Fase | Isi | Status |
 |------|-----|--------|
 | 0 | Renderer data-driven (schema, data, komponen dial, CSS) | ✅ commit + push |
-| 1 | Baca data dari Supabase (fallback ke hardcoded) | ✅ commit + push + **live di Vercel** |
-| 2 | Login password + panel admin (edit situs & item) | ✅ commit (belum push) + terverifikasi lokal, sisa 1 langkah DB |
+| 1 | Baca data dari Supabase (fallback ke hardcoded) | ✅ commit, **belum push** |
+| 2 | Login password + panel admin (edit situs & item) | ✅ commit, **belum push** + terverifikasi lokal, sisa 1 langkah DB |
 | 3 | Editor konten per-layout (blank/foto/menu/HTML) + upload gambar | ⬜ berikutnya |
 | 4 | Poles: drag-reorder, preview live, validasi | ⬜ |
 | 5 | Multi-tenant (produk): subdomain per klien, Supabase Auth, RLS | ⬜ |
 
 ## Yang sudah live / tersimpan
-- **Live:** https://porto-wfd.vercel.app (versi Fase 1)
-- **GitHub:** https://github.com/wisnufdewantara/new-porto-wfd (sampai Fase 1)
+- **Live:** https://porto-wfd.vercel.app — **masih Fase 0** (data hardcoded, BUKAN dari
+  Supabase). Dicek 18 Agustus 2026: nama yang tampil "Wisnu Fajar Dewantara" (DB: "Wisnu F
+  Dewantara"), accent `#0ea5e9` (DB: `#e1dfe1`), widget chat AI belum ada.
+- **GitHub:** https://github.com/wisnufdewantara/new-porto-wfd — `origin/main` masih di
+  commit Fase 0 (`28d2124`). Lokal ahead 5 commit. Catatan journal sebelumnya yang bilang
+  "Fase 1 sudah push & live" itu KELIRU.
+- **Repo ini PUBLIK** — jangan pernah menaruh secret di kode, termasuk sebagai nilai default.
 - **Supabase:** `https://yfjwrqpvvuaqmfdoudct.supabase.co` (tabel `sites` + `items` sudah di-seed)
 
 ---
@@ -91,6 +96,8 @@ Sudah dites dan LULUS, lokal:
 | Server action `updateSite` (nilai identik) | ✅ 200, cuma `updated_at` bergerak |
 | Login password salah | ✅ 303 → `?error=1`, tanpa cookie sesi |
 | Tulis pakai publishable key (update/insert/delete) | ✅ diblokir RLS (0 baris / 401) |
+| Fail-closed: `next start` produksi TANPA `SESSION_SECRET` | ✅ cookie palsu (pakai secret fallback yang ada di repo publik) ditolak 307, login balas `?error=config` |
+| Produksi DENGAN `SESSION_SECRET`: cookie sah | ✅ 200 panel jalan; cookie fallback tetap ditolak |
 
 Belum dites: login lewat browser pakai password asli (cuma Wisnu yang tahu passwordnya —
 jalur bcrypt-nya sendiri sudah terbukti lewat kasus password salah).
@@ -101,10 +108,14 @@ jalur bcrypt-nya sendiri sudah terbukti lewat kasus password salah).
    ke browser), jadi hash-nya bisa diambil orang lalu di-brute-force offline. Setelah
    di-run, `select password_hash` dari publik harus gagal `42501`.
 2. Tes login di browser: `npm run dev` → http://localhost:3000/admin/login → edit → Simpan → cek `/`.
-3. `git push` Fase 2 (2 commit: panel admin + widget chat AI).
-4. Set 4 env var di Vercel biar live jadi full-CMS:
+3. `git push` (5 commit: Fase 1 + panel admin + widget chat AI + docs + fail-closed auth).
+4. Set 4 env var di Vercel — **wajib keempatnya, jangan sebagian**:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
-   `SUPABASE_SECRET_KEY`, `SESSION_SECRET`.
+   `SUPABASE_SECRET_KEY`, `SESSION_SECRET` (yang terakhir bikin sendiri, mis.
+   `openssl rand -base64 32`). Tanpa `SESSION_SECRET` panel admin sengaja mati total
+   (fail-closed), bukan diam-diam bisa dimasuki.
+5. Habis deploy, cek live: nama harusnya berubah jadi "Wisnu F Dewantara" dan accent
+   `#e1dfe1` — itu bukti sudah baca DB, bukan fallback hardcoded lagi.
 
 ## Catatan keamanan
 - `.env.local` di-gitignore — secret TIDAK ke-push. Di Vercel diisi manual.

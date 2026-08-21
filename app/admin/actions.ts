@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { getSession, createSession, destroySession, verifyPassword } from "@/lib/auth";
+import { getSession, createSession, destroySession, verifyPassword, authConfigured } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { MAX_ITEMS } from "@/lib/schema";
 
@@ -26,7 +26,7 @@ async function siteId(): Promise<string> {
 // ---- Auth ----
 export async function login(formData: FormData) {
   const pw = String(formData.get("password") || "");
-  if (!supabaseAdmin) redirect("/admin/login?error=config");
+  if (!supabaseAdmin || !authConfigured()) redirect("/admin/login?error=config");
   const { data: site } = await supabaseAdmin!
     .from("sites")
     .select("password_hash")
