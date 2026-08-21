@@ -1,10 +1,15 @@
+import { cache } from "react";
 import { supabase } from "./supabase";
 import type { SiteData, Item, LayoutContent, Lang } from "./schema";
 
 // Ambil satu situs + item-nya dari Supabase, lalu petakan ke bentuk SiteData
 // yang dipakai renderer. Mengembalikan null jika belum ada / gagal
 // (mis. tabel belum dibuat) → pemanggil bisa fallback ke data hardcoded.
-export async function getSite(slug: string): Promise<SiteData | null> {
+//
+// Dibungkus cache() dari React: satu request memanggil ini dua kali
+// (generateMetadata + komponen halaman), dan cache() bikin query ke Supabase
+// tetap sekali saja.
+export const getSite = cache(async function getSite(slug: string): Promise<SiteData | null> {
   if (!supabase) return null;
 
   try {
@@ -47,4 +52,4 @@ export async function getSite(slug: string): Promise<SiteData | null> {
   } catch {
     return null;
   }
-}
+});

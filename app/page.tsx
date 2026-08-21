@@ -1,6 +1,21 @@
+import type { Metadata } from "next";
 import DialApp from "@/components/dial/DialApp";
 import { getSite } from "@/lib/getSite";
 import { siteData } from "@/data/site";
+
+// Judul & deskripsi ikut data situs, bukan hardcoded — kalau nama diubah di
+// panel admin, tab browser ikut berubah. Sumber datanya sama dengan halaman
+// (getSite ber-cache), jadi tidak nambah query.
+export async function generateMetadata(): Promise<Metadata> {
+  const site = (await getSite("wisnu")) ?? siteData;
+  const role = site.role[site.defaultLang] || site.role.id;
+  return {
+    title: `${site.name} — Portofolio`,
+    description: role
+      ? `Portofolio & CV interaktif ${site.name} — ${role}.`
+      : `Portofolio & CV interaktif ${site.name}.`,
+  };
+}
 
 // Baca dari Supabase. Selama DB belum di-seed (atau env belum diisi),
 // otomatis fallback ke data hardcoded supaya halaman tetap tampil.

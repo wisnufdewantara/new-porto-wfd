@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import "@/styles/dial.css";
 
+// Fallback saja. Halaman publik menimpanya lewat generateMetadata() yang baca
+// DB; /admin punya judulnya sendiri.
 export const metadata: Metadata = {
-  title: "Wisnu Fajar Dewantara — Portofolio",
-  description: "Portofolio & CV interaktif Wisnu Fajar Dewantara.",
+  title: "Portofolio",
+  description: "Portofolio & CV interaktif.",
 };
 
 export default function RootLayout({
