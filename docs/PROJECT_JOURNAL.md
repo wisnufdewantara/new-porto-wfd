@@ -31,20 +31,22 @@ preview live ditunda ke Fase 4 · TypeScript ya · Vercel subdomain dulu.
 | Fase | Isi | Status |
 |------|-----|--------|
 | 0 | Renderer data-driven (schema, data, komponen dial, CSS) | ✅ commit + push |
-| 1 | Baca data dari Supabase (fallback ke hardcoded) | ✅ commit, **belum push** |
-| 2 | Login password + panel admin (edit situs & item) | ✅ commit, **belum push** + terverifikasi lokal, sisa 1 langkah DB |
+| 1 | Baca data dari Supabase (fallback ke hardcoded) | ✅ commit + push + **live baca DB** |
+| 2 | Login password + panel admin (edit situs & item) | ✅ **SELESAI** — commit + push + live, `harden.sql` sudah jalan |
 | 3 | Editor konten per-layout (blank/foto/menu/HTML) + upload gambar | ⬜ berikutnya |
 | 4 | Poles: drag-reorder, preview live, validasi | ⬜ |
 | 5 | Multi-tenant (produk): subdomain per klien, Supabase Auth, RLS | ⬜ |
 
 ## Yang sudah live / tersimpan
-- **Live:** https://porto-wfd.vercel.app — **masih Fase 0** (data hardcoded, BUKAN dari
-  Supabase). Dicek 18 Agustus 2026: nama yang tampil "Wisnu Fajar Dewantara" (DB: "Wisnu F
-  Dewantara"), accent `#0ea5e9` (DB: `#e1dfe1`), widget chat AI belum ada.
-- **GitHub:** https://github.com/wisnufdewantara/new-porto-wfd — `origin/main` masih di
-  commit Fase 0 (`28d2124`). Lokal ahead 5 commit. Catatan journal sebelumnya yang bilang
-  "Fase 1 sudah push & live" itu KELIRU.
+- **Live:** https://porto-wfd.vercel.app — sudah **Fase 2 penuh dan baca DB**. Diverifikasi
+  22 Agustus 2026: `<h1>` = "Wisnu F Dewantara" (dari DB) dan accent `#e1dfe1` (dari DB),
+  bukan lagi fallback hardcoded. `POST /admin/login` balas `?error=1` untuk password salah,
+  artinya keempat env var sudah kebaca runtime.
+- **GitHub:** https://github.com/wisnufdewantara/new-porto-wfd — `origin/main` sinkron.
 - **Repo ini PUBLIK** — jangan pernah menaruh secret di kode, termasuk sebagai nilai default.
+- **Pelajaran soal env Vercel:** nyimpen env var TIDAK mengubah situs yang sudah jalan.
+  Harus ada deployment baru — entah klik Redeploy, atau `git push` (push otomatis ikut
+  membawa env var terbaru). `NEXT_PUBLIC_*` ditanam saat build, jadi wajib build ulang.
 - **Supabase:** `https://yfjwrqpvvuaqmfdoudct.supabase.co` (tabel `sites` + `items` sudah di-seed)
 
 ---
@@ -102,7 +104,14 @@ Sudah dites dan LULUS, lokal:
 Belum dites: login lewat browser pakai password asli (cuma Wisnu yang tahu passwordnya —
 jalur bcrypt-nya sendiri sudah terbukti lewat kasus password salah).
 
-## Loose ends buat menutup Fase 2 (langkah berikutnya)
+## Sisa kecil yang belum ditutup
+- `<title>` halaman masih hardcoded di `app/layout.tsx` ("Wisnu Fajar Dewantara —
+  Portofolio"), belum ikut DB — jadi tab browser beda dengan nama di halaman. Perbaikannya:
+  `generateMetadata()` yang baca `getSite()`.
+- Dari checklist keamanan PLAN §9 yang masih kosong: rate-limit login, validasi Zod di
+  server action, validasi upload gambar, DOMPurify untuk layout `html`.
+
+## Loose ends Fase 2 — SUDAH SELESAI SEMUA (arsip)
 1. **PENTING — jalankan `supabase/harden.sql`** di Supabase → SQL Editor. Sekarang kolom
    `password_hash` MASIH bisa dibaca publik pakai publishable key (kunci itu ikut terkirim
    ke browser), jadi hash-nya bisa diambil orang lalu di-brute-force offline. Setelah
