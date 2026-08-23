@@ -33,7 +33,7 @@ preview live ditunda ke Fase 4 · TypeScript ya · Vercel subdomain dulu.
 | 0 | Renderer data-driven (schema, data, komponen dial, CSS) | ✅ commit + push |
 | 1 | Baca data dari Supabase (fallback ke hardcoded) | ✅ commit + push + **live baca DB** |
 | 2 | Login password + panel admin (edit situs & item) | ✅ **SELESAI** — commit + push + live, `harden.sql` sudah jalan |
-| 3 | Editor konten per-layout (blank/foto/menu/HTML) + upload gambar | ✅ commit + push, terverifikasi lokal |
+| 3 | Editor konten per-layout (blank/foto/menu/HTML) + upload gambar | 🟡 **selesai & lulus tes lokal, TAPI di-revert dari `main`** — deploy Fase 3 bikin semua route 500 di Vercel. Parkir di branch `fix/phase3-serverless`. |
 | 4 | Poles: drag-reorder, preview live, validasi | ⬜ |
 | 5 | Multi-tenant (produk): subdomain per klien, Supabase Auth, RLS | ⬜ |
 
@@ -50,6 +50,31 @@ preview live ditunda ke Fase 4 · TypeScript ya · Vercel subdomain dulu.
 - **Supabase:** `https://yfjwrqpvvuaqmfdoudct.supabase.co` (tabel `sites` + `items` sudah di-seed)
 
 ---
+
+## ⚠️ Status Fase 3: di-revert dari produksi (23 Agustus 2026)
+
+Deploy Fase 3 (commit `aa515b8`) bikin **semua route balas 500** di Vercel — termasuk
+`/admin/login` yang tidak menyanitasi apa pun. Build-nya sendiri sukses; yang gagal runtime.
+Situs sudah dipulihkan lewat revert `76fbf81`, dan `main` sekarang = Fase 2 + perbaikan judul.
+
+**Yang sudah dicoba untuk mereproduksi (semuanya GAGAL mereproduksi, alias lokal sehat):**
+`next start` produksi lokal → 200 · `output: "standalone"` (mekanisme file-tracing yang sama
+dengan serverless) → 200, dan `jsdom` ternyata IKUT ter-trace · versi Node lokal 20.19.6
+memenuhi syarat jsdom 29.
+
+**Dugaan terkuat:** `lib/sanitize.ts` mengimpor DOMPurify di level modul, jadi kalau
+pemuatannya gagal di runtime Vercel, semua route yang menyentuhnya ikut mati. Pola "semua
+route 500 termasuk yang tak menyanitasi" cocok dengan itu.
+
+**Sudah diperbaiki di branch `fix/phase3-serverless`:** DOMPurify dimuat malas + dibungkus
+try/catch, dengan cadangan buang-tag. Diuji dengan menyembunyikan paketnya: situs tetap 200,
+konten tetap tampil, dan error aslinya tercetak di log. Jadi kalaupun penyebabnya belum
+ketahuan, sanitasi tidak lagi bisa menjatuhkan situs — dan log Vercel akan menyebut error
+sebenarnya.
+
+**Langkah berikutnya:** buka preview deployment branch itu (URL ada di dashboard Vercel,
+preview diproteksi jadi harus login), atau baca Runtime Logs deployment `aa515b8`. Setelah
+terbukti hijau, merge ke `main`.
 
 ## Fase 3 — apa yang ditambahkan (22 Agustus 2026)
 
