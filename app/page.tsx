@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import DialApp from "@/components/dial/DialApp";
 import { getSite } from "@/lib/getSite";
 import { siteData } from "@/data/site";
+import { sanitizeSite } from "@/lib/sanitize";
 
 // Judul & deskripsi ikut data situs, bukan hardcoded — kalau nama diubah di
 // panel admin, tab browser ikut berubah. Sumber datanya sama dengan halaman
@@ -20,7 +21,9 @@ export async function generateMetadata(): Promise<Metadata> {
 // Baca dari Supabase. Selama DB belum di-seed (atau env belum diisi),
 // otomatis fallback ke data hardcoded supaya halaman tetap tampil.
 export default async function Home() {
-  const site = (await getSite("wisnu")) ?? siteData;
+  // Sanitasi di server sebelum data menyeberang ke DialApp (komponen klien):
+  // layout "html" dirender lewat dangerouslySetInnerHTML di sana.
+  const site = sanitizeSite((await getSite("wisnu")) ?? siteData);
   return <DialApp site={site} />;
 }
 
