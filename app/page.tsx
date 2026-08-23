@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Home() {
   // Sanitasi di server sebelum data menyeberang ke DialApp (komponen klien):
   // layout "html" dirender lewat dangerouslySetInnerHTML di sana.
-  const site = sanitizeSite((await getSite("wisnu")) ?? siteData);
+  const site = await sanitizeSite((await getSite("wisnu")) ?? siteData);
   return <DialApp site={site} />;
 }
 

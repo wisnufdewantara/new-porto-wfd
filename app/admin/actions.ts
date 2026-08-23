@@ -186,7 +186,7 @@ async function readContent(target: string): Promise<LayoutContent> {
 async function writeContent(target: string, content: LayoutContent) {
   const parsed = V.layoutContent.safeParse(content);
   if (!parsed.success) fail("content");
-  const clean = sanitizeContent(parsed.data as LayoutContent);
+  const clean = await sanitizeContent(parsed.data as LayoutContent);
   const now = new Date().toISOString();
 
   if (target === "about") {
