@@ -33,7 +33,7 @@ preview live ditunda ke Fase 4 · TypeScript ya · Vercel subdomain dulu.
 | 0 | Renderer data-driven (schema, data, komponen dial, CSS) | ✅ commit + push |
 | 1 | Baca data dari Supabase (fallback ke hardcoded) | ✅ commit + push + **live baca DB** |
 | 2 | Login password + panel admin (edit situs & item) | ✅ **SELESAI** — commit + push + live, `harden.sql` sudah jalan |
-| 3 | Editor konten per-layout (blank/foto/menu/HTML) + upload gambar | 🟡 **selesai & lulus tes lokal, TAPI di-revert dari `main`** — deploy Fase 3 bikin semua route 500 di Vercel. Parkir di branch `fix/phase3-serverless`. |
+| 3 | Editor konten per-layout (blank/foto/menu/HTML) + upload gambar | ✅ **SELESAI & live** sejak 18 September 2026 |
 | 4 | Poles: drag-reorder, preview live, validasi | ⬜ |
 | 5 | Multi-tenant (produk): subdomain per klien, Supabase Auth, RLS | ⬜ |
 
@@ -51,7 +51,37 @@ preview live ditunda ke Fase 4 · TypeScript ya · Vercel subdomain dulu.
 
 ---
 
-## ⚠️ Status Fase 3: di-revert dari produksi (23 Agustus 2026)
+## Fase 3: SELESAI — penyebab 500-nya akhirnya ketemu (18 September 2026)
+
+**Penyebabnya jsdom, bukan tracing.** Endpoint diagnostik sementara di produksi
+menangkap error aslinya:
+
+```
+ERR_REQUIRE_ESM: require() of ES Module @exodus/bytes/encoding-lite.js
+from html-encoding-sniffer/lib/html-encoding-sniffer.js not supported
+```
+
+`html-encoding-sniffer` (dependensi jsdom) me-`require()` modul yang ternyata ESM. Paket
+eksternal dimuat lewat shim require milik Turbopack, dan shim itu tidak bisa memuat ESM.
+Lokal selamat cuma karena `node_modules`-nya terpasang tiga minggu lebih awal — Vercel
+memasang ulang dan dapat versi transitif yang berbeda. **Pelajarannya: "lolos di lokal"
+tidak ada artinya untuk kegagalan yang berasal dari resolusi dependensi.**
+
+**Perbaikannya:** mesin sanitasi diganti ke `sanitize-html` — memarsir HTML sendiri, tanpa
+DOM, tanpa jsdom. PLAN §12 menyebut DOMPurify; maksud keputusan itu (HTML custom tidak
+pernah sampai ke pembaca dalam keadaan mentah) tetap dipegang, dan menukarnya balik cuma
+edit satu berkas.
+
+**Jaring pengaman tetap dipertahankan:** modul dimuat malas di dalam try/catch dengan
+cadangan buang-tag. Itu yang bikin deploy bermasalah kemarin cuma menurunkan kualitas
+tampilan (HTML jadi teks polos) alih-alih membalas 500 di semua route — sekaligus yang
+membuat error aslinya bisa ditangkap.
+
+**Terverifikasi di produksi:** `timeline=10`, `noopener=18`, `mailto=2` (sama persis dengan
+lokal, jadi mesinnya benar-benar jalan, bukan mode cadangan), `/admin/login` balas
+`?error=1` untuk password salah, `/admin` tanpa cookie ditolak 307.
+
+### Arsip: catatan saat masih gagal (23 Agustus 2026)
 
 Deploy Fase 3 (commit `aa515b8`) bikin **semua route balas 500** di Vercel — termasuk
 `/admin/login` yang tidak menyanitasi apa pun. Build-nya sendiri sukses; yang gagal runtime.
@@ -72,9 +102,9 @@ konten tetap tampil, dan error aslinya tercetak di log. Jadi kalaupun penyebabny
 ketahuan, sanitasi tidak lagi bisa menjatuhkan situs — dan log Vercel akan menyebut error
 sebenarnya.
 
-**Langkah berikutnya:** buka preview deployment branch itu (URL ada di dashboard Vercel,
-preview diproteksi jadi harus login), atau baca Runtime Logs deployment `aa515b8`. Setelah
-terbukti hijau, merge ke `main`.
+**Langkah berikutnya:** ~~buka preview deployment~~ — tidak jadi perlu. Preview Vercel
+diproteksi login sehingga tidak bisa diuji dari luar; yang akhirnya menjawab adalah endpoint
+diagnostik sementara di produksi, karena jaring pengaman membuat deploy-nya aman dicoba.
 
 ## Fase 3 — apa yang ditambahkan (22 Agustus 2026)
 
@@ -164,6 +194,15 @@ Sudah dites dan LULUS, lokal:
 
 Belum dites: login lewat browser pakai password asli (cuma Wisnu yang tahu passwordnya —
 jalur bcrypt-nya sendiri sudah terbukti lewat kasus password salah).
+
+## Catatan operasional: Supabase Free bisa di-pause
+
+17 September 2026 situs tiba-tiba menampilkan data hardcoded lagi. Penyebabnya project
+Supabase di-pause karena lama tak ada aktivitas — dan saat di-pause, **host-nya hilang dari
+DNS**, bukan cuma menolak koneksi. Sempat terbaca seolah project-nya dihapus. Fallback di
+`app/page.tsx` bekerja seperti rancangannya: halaman tetap tampil utuh dari `data/site.ts`,
+bukan halaman error. Begitu project diaktifkan lagi, semua data kembali utuh (nama, accent,
+11 item, `harden.sql`, password admin) tanpa perlu dipulihkan.
 
 ## Sisa kecil yang belum ditutup
 - ~~`<title>` hardcoded~~ ✅ selesai 22 Agustus 2026: `app/page.tsx` pakai
