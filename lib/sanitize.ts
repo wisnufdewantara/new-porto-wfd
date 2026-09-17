@@ -1,58 +1,74 @@
 import type { LayoutContent, Localized, SiteData } from "./schema";
 
-// Sanitasi HTML custom (layout "html"). Keputusan yang dikunci di PLAN §12.
-// Dipakai DUA kali dengan sengaja:
+// Sanitasi HTML custom (layout "html"). Keputusan yang dikunci di PLAN §12
+// menyebut DOMPurify; mesinnya diganti ke sanitize-html karena DOMPurify butuh
+// DOM tiruan (jsdom), dan jsdom GAGAL DIMUAT di runtime Vercel:
+//
+//   ERR_REQUIRE_ESM: require() of ES Module @exodus/bytes/encoding-lite.js
+//   from html-encoding-sniffer/lib/html-encoding-sniffer.js
+//
+// Paket eksternal dimuat lewat shim require milik Turbopack, dan shim itu tidak
+// bisa memuat dependensi ESM. Lokal lolos hanya karena pohon dependensinya lebih
+// tua. sanitize-html memarsir HTML sendiri — tanpa DOM, tanpa jsdom — jadi
+// seluruh kelas masalah ini hilang. Tujuannya tetap sama: HTML dari CMS tidak
+// pernah sampai ke pengguna dalam keadaan mentah.
+//
+// Sanitasi dijalankan DUA kali dengan sengaja:
 //  1) saat menyimpan  → yang tersimpan di DB sudah bersih;
 //  2) saat merender   → data lama / hasil edit manual di DB tetap aman.
-// LayoutRenderer jalan di komponen klien, jadi sanitasi HARUS sudah beres
-// di server sebelum datanya dikirim ke sana.
+// LayoutRenderer jalan di komponen klien lewat dangerouslySetInnerHTML, jadi
+// pembersihannya harus sudah selesai di server.
 //
-// DOMPurify dimuat MALAS dan dibungkus try/catch. Alasannya mahal: versi
-// pertama mengimpornya di level modul, dan ketika pemuatannya gagal di
-// runtime Vercel (lokal aman), setiap route yang menyentuh modul ini balas
-// 500 — termasuk /admin/login yang tidak menyanitasi apa pun. Sanitasi yang
-// bermasalah harus menurunkan kualitas tampilan, bukan menjatuhkan situs.
+// Modul dimuat malas di dalam try/catch. Versi pertama mengimpornya di level
+// modul, dan ketika pemuatannya gagal di produksi, SETIAP route yang menyentuh
+// berkas ini balas 500 — termasuk /admin/login yang tidak menyanitasi apa pun.
+// Sanitasi yang bermasalah harus menurunkan kualitas tampilan, bukan
+// menjatuhkan situs.
 
-const CONFIG = {
-  ALLOWED_TAGS: [
-    "p", "br", "hr", "b", "strong", "i", "em", "u", "s", "code", "pre",
-    "blockquote", "h1", "h2", "h3", "h4", "ul", "ol", "li",
-    "a", "img", "table", "thead", "tbody", "tr", "th", "td", "span", "div",
-  ],
-  ALLOWED_ATTR: ["href", "title", "alt", "src", "target", "rel", "class"],
-  // Cegah javascript:/data: di href & src — hanya skema aman yang lolos.
-  ALLOWED_URI_REGEXP: /^(?:https?:|mailto:|tel:|#|\/)/i,
-  // Memasang ALLOWED_URI_REGEXP bikin DOMPurify menguji SEMUA nilai atribut
-  // terhadap regex itu, kecuali yang dianggap URI-safe. `target` bukan URL,
-  // jadi tanpa baris ini `target="_blank"` ikut terbuang.
-  ADD_URI_SAFE_ATTR: ["target"],
-};
+const ALLOWED_TAGS = [
+  "p", "br", "hr", "b", "strong", "i", "em", "u", "s", "code", "pre",
+  "blockquote", "h1", "h2", "h3", "h4", "ul", "ol", "li",
+  "a", "img", "table", "thead", "tbody", "tr", "th", "td", "span", "div",
+];
 
-type Purifier = { sanitize: (dirty: string, cfg: typeof CONFIG) => string };
-let purifier: Purifier | null | undefined;
+type SanitizeFn = (dirty: string, opts: Record<string, unknown>) => string;
 
-async function getPurifier(): Promise<Purifier | null> {
-  if (purifier !== undefined) return purifier;
+let engine: SanitizeFn | null | undefined;
+
+async function getEngine(): Promise<SanitizeFn | null> {
+  if (engine !== undefined) return engine;
   try {
-    const mod = await import("isomorphic-dompurify");
-    const DOMPurify = (mod.default ?? mod) as unknown as Purifier & {
-      addHook: (n: string, cb: (node: Element) => void) => void;
-    };
-    // Link yang membuka tab baru wajib punya rel anti tabnabbing.
-    DOMPurify.addHook("afterSanitizeAttributes", (node: Element) => {
-      if (node.tagName === "A" && node.getAttribute("target") === "_blank") {
-        node.setAttribute("rel", "noopener noreferrer");
-      }
-    });
-    purifier = DOMPurify;
+    const mod = await import("sanitize-html");
+    engine = (mod.default ?? mod) as unknown as SanitizeFn;
   } catch (err) {
-    console.error("[sanitize] DOMPurify gagal dimuat, jatuh ke mode buang-tag:", err);
-    purifier = null;
+    console.error("[sanitize] mesin sanitasi gagal dimuat, jatuh ke mode buang-tag:", err);
+    engine = null;
   }
-  return purifier;
+  return engine;
 }
 
-/** Cadangan kalau DOMPurify tidak tersedia: buang SEMUA tag, sisakan teksnya. */
+const OPTIONS: Record<string, unknown> = {
+  allowedTags: ALLOWED_TAGS,
+  allowedAttributes: {
+    "*": ["class", "title"],
+    a: ["href", "target", "rel"],
+    img: ["src", "alt"],
+  },
+  // Hanya skema aman. javascript: dan data: tidak ada di daftar, jadi ditolak.
+  allowedSchemes: ["http", "https", "mailto", "tel"],
+  allowedSchemesAppliedToAttributes: ["href", "src"],
+  transformTags: {
+    // Link yang membuka tab baru wajib punya rel anti tabnabbing.
+    a: (tagName: string, attribs: Record<string, string>) => {
+      if (attribs.target === "_blank") {
+        attribs.rel = "noopener noreferrer";
+      }
+      return { tagName, attribs };
+    },
+  },
+};
+
+/** Cadangan kalau mesinnya tidak tersedia: buang SEMUA tag, sisakan teksnya. */
 function stripTags(dirty: string): string {
   return dirty
     .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
@@ -61,9 +77,9 @@ function stripTags(dirty: string): string {
 }
 
 export async function sanitizeHtml(dirty: string): Promise<string> {
-  const p = await getPurifier();
-  if (!p) return stripTags(dirty ?? "");
-  return String(p.sanitize(dirty ?? "", CONFIG));
+  const run = await getEngine();
+  if (!run) return stripTags(dirty ?? "");
+  return run(dirty ?? "", OPTIONS);
 }
 
 async function sanitizeLocalizedHtml(v: Localized): Promise<Localized> {
