@@ -121,6 +121,8 @@ export default function DialApp({ site }: { site: SiteData }) {
               type="button"
               key={item.id}
               className={`avatar ${openId === item.id ? "selected" : ""}`}
+              // Kait untuk gaya khusus per ikon (mis. lambaian maneki neko di dial.css).
+              data-icon={item.kind === "icon" ? item.icon : undefined}
               style={{ ["--i"]: idx + 1 } as React.CSSProperties}
               onClick={() => toggle(item.id)}
               aria-label={item.label[lang]}

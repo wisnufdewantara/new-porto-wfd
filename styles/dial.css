@@ -145,6 +145,20 @@ body { font-family: "Inter", system-ui, sans-serif; background: var(--bg); color
 }
 .avatar.selected .icon { transform: scale(1.15); }
 
+/* Maneki neko: telapaknya melambai saat disorot atau difokus keyboard.
+   Titik putarnya di pangkal telapak supaya gerakannya seperti melambai,
+   bukan berputar di tengah. */
+.avatar[data-icon="pets"] .icon { transform-origin: 62% 82%; }
+.avatar[data-icon="pets"]:hover .icon,
+.avatar[data-icon="pets"]:focus-visible .icon {
+  animation: neko-wave .8s ease-in-out infinite;
+}
+@keyframes neko-wave {
+  0%, 100% { transform: rotate(0deg)   scale(1.1); }
+  25%      { transform: rotate(-22deg) scale(1.1); }
+  75%      { transform: rotate(22deg)  scale(1.1); }
+}
+
 /* ---- Tooltip di bawah ikon ---- */
 .tip {
   position: absolute;
@@ -324,6 +338,7 @@ body { font-family: "Inter", system-ui, sans-serif; background: var(--bg); color
 
 @media (prefers-reduced-motion: reduce) {
   .center, .avatar { animation: none !important; }
+  .avatar[data-icon="pets"] .icon { animation: none !important; }
   .ai-panel { animation: none !important; }
   .ai-fab:hover { transform: none; }
   .dial { transition: none !important; transform: none !important; }
