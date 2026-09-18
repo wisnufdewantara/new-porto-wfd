@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { SiteData, Lang, LayoutContent } from "@/lib/schema";
 import { LayoutRenderer } from "./LayoutRenderer";
+import ManekiNeko from "./ManekiNeko";
 import AiChat from "./AiChat";
 
 // Komponen interaktif utama — memegang state bahasa, tema, item terpilih,
@@ -121,8 +122,10 @@ export default function DialApp({ site }: { site: SiteData }) {
               type="button"
               key={item.id}
               className={`avatar ${openId === item.id ? "selected" : ""}`}
-              // Kait untuk gaya khusus per ikon (mis. lambaian maneki neko di dial.css).
-              data-icon={item.kind === "icon" ? item.icon : undefined}
+              // Kait untuk gaya khusus per item (mis. lambaian maneki neko di dial.css).
+              // Ikut dipasang untuk item bergambar, karena item bisa memakai foto
+              // sambil tetap menyimpan nama ikonnya sebagai penanda.
+              data-icon={item.icon}
               style={{ ["--i"]: idx + 1 } as React.CSSProperties}
               onClick={() => toggle(item.id)}
               aria-label={item.label[lang]}
@@ -130,6 +133,11 @@ export default function DialApp({ site }: { site: SiteData }) {
               {item.kind === "photo" && item.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={item.image} alt="" />
+              ) : item.icon === "maneki_neko" ? (
+                // Satu-satunya ikon yang tidak berasal dari Material Symbols:
+                // digambar sendiri supaya tangannya bisa melambai. Tetap
+                // digerakkan data — pemicunya nama ikon di database.
+                <ManekiNeko />
               ) : (
                 <span className="material-symbols-outlined icon">{item.icon}</span>
               )}
